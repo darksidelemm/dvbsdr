@@ -1,3 +1,5 @@
+## VK5QI fork, so I can configuration manage the software used on an upcoming Project Horus HAB flight.
+
 # About dvbsdr
 
 **dvbsdr** is an integration of several projects around Digital Amator TeleVision using SDR technics.

@@ -79,50 +79,50 @@ fi
 #------For X86, install ffmpeg encoder
 
 #------- Install Leandvb -----------------
-git clone https://github.com/F5OEO/leansdr
-cd leansdr/src/apps
-git checkout work
-make
-make embedded
-cp leandvb ../../../../bin/
-cp leaniiotx ../../../../bin/
-cd ../../../
+# git clone https://github.com/F5OEO/leansdr
+# cd leansdr/src/apps
+# git checkout work
+# make
+# make embedded
+# cp leandvb ../../../../bin/
+# cp leaniiotx ../../../../bin/
+# cd ../../../
 
 #install Excellent Analog TV project from fsphil : hacktv
-git clone https://github.com/F5OEO/hacktv
-cd hacktv
-sudo apt-get install libhackrf-dev
-make
-cp hacktv ../../bin/
-cd ..
+# git clone https://github.com/F5OEO/hacktv
+# cd hacktv
+# sudo apt-get install libhackrf-dev
+# make
+# cp hacktv ../../bin/
+# cd ..
 
 #------- Raspberry : Install KisSpectrum -------------
-if  [ "$Platform" = "rpi" ] ; then
+# if  [ "$Platform" = "rpi" ] ; then
 
-#Install debian packages
-sudo apt-get install -y fftw3-dev libjpeg-dev autoconf ttf-dejavu-core
+# #Install debian packages
+# sudo apt-get install -y fftw3-dev libjpeg-dev autoconf ttf-dejavu-core
 
-git clone https://github.com/F5OEO/kisspectrum
-cd kisspectrum
-#install liquid-dsp library
-git clone --depth=1 https://github.com/jgaeddert/liquid-dsp
-cd liquid-dsp
-./bootstrap.sh  
-./configure
-make
-sudo make install
-cd ../
+# git clone https://github.com/F5OEO/kisspectrum
+# cd kisspectrum
+# #install liquid-dsp library
+# git clone --depth=1 https://github.com/jgaeddert/liquid-dsp
+# cd liquid-dsp
+# ./bootstrap.sh  
+# ./configure
+# make
+# sudo make install
+# cd ../
 
-#make 
-make
-cp kisspectrum ../../bin/
-cd ../
+# #make 
+# make
+# cp kisspectrum ../../bin/
+# cd ../
 
 #--------- Install csdr ----------------
-git clone https://github.com/simonyiszk/csdr
-cd csdr
-make && sudo make install
-cd ../
+# git clone https://github.com/simonyiszk/csdr
+# cd csdr
+# make && sudo make install
+# cd ../
 
 fi 
 # End of install
