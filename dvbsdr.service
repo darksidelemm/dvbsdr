@@ -1,0 +1,16 @@
+[Unit]
+Description=dvbsdr
+After=syslog.target
+
+[Service]
+ExecStart=/home/pi/dvbsdr/scripts/rpi_tx.sh
+Restart=always
+RestartSec=60
+WorkingDirectory=/home/pi/dvbsdr/scripts/
+User=pi
+SyslogIdentifier=dvbsdr
+
+[Install]
+WantedBy=multi-user.target
+
+

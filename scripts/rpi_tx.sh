@@ -78,3 +78,6 @@ MODULATE=LIME
 NETWORK=""
 # Launch processes
 source ./include/encode.sh | source ./include/limerf.sh
+
+# avc2ts doesnt like to die.
+killall -9 avc2ts
