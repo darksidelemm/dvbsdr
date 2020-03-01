@@ -1,4 +1,22 @@
-## VK5QI fork, so I can configuration manage the software used on an upcoming Project Horus HAB flight.
+## VK5QI fork
+
+This fork of dvbsdr exists so I can configuration-manage the changes I have made to dvbsdr for an upcoming Project Horus payload.
+
+Additions by VK5QI:
+* `scripts/rpi_tx.sh` - Essentially the same as the encode_modulate.sh script mentioned below, with customizations for our flight.
+* dvbsdr systemd service file (`dvbsdr.service`). Allows dvbsdr to be started and stopped using sytemd.
+  * Note: not everything stops cleanly using sytemctl stop. Suggest using systemctl kill, followed by a systemctl stop to properly kill the software.
+* `dvb_watchdog.py`, intended to be run on startup from `/etc/rc.local`. This script monitors a few temperature sensors, some IO pins, and (eventually) GPS descent/altitude data to determine when the DVB-S modulator and Power Amplifier should be enabled. Currently the following IO Connections are used:
+  * GPIO 21 - DVB-S Enable. Short pin to ground to enable DVB-S transmissions. Disconnect to stop transmissions.
+  * GPIO 13 - PA Enable. This used to drive the gate of a 2N7000 (via 100R, with a 10K pull-down at the gate), which drives a relay coil. This lets me completely cut power to the PA, cutting power dissipation within the payload by ~3-4W.
+
+As I have had issues reliably getting full power out of the LimeSDR Mini when using a stored limemini.cal file, I've taken the approach of calibrating at each startup. As I have control over the PA, I disable power to the PA prior to starting DVB-S modulation, then enable the PA 30 seconds later.
+
+TODO:
+* Monitor modulator output, and try and detect there are issues with the PiCam. (Maybe monitor running processes?)
+* Add GPS input, with descent rate detection. Aim here is to cut power to the PA when the payload is in descent, and is about to land. Will need to use some non-volatile storage (save a file?) to ensure this persists across reboots.
+  * Maybe use another GPIO line to override these checks, for testing on ground?
+* Add additional temp sensors (DS18B20), bonded to the payload's heat spreader. Decided on an appropriate high temperature cutoff, and hysteresis values.
 
 # About dvbsdr
 

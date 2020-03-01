@@ -18,8 +18,10 @@ except RuntimeError:
     print("ERROR: Could not load RPi GPIO Libraries.")
 
 # Pin Definitions
-DVB_ENABLE_SWITCH = 21 # Switch wired between GPIO pin and GND. Close to enable TX.
-DVB_ENABLE_RELAY = 13
+DVB_ENABLE_SWITCH = 21  # Switch wired between GPIO pin and GND. Close switch to enable TX.
+DVB_ENABLE_RELAY = 13   # Relay wired between 12V rail and PA power input.
+                        # Relay coil powered via 2N7000, with 2N7000 gate connected to this pin via 100ohm resistor,
+                        # and 10k pulldown.
 
 # Limits
 PIZERO_TEMP_LIMIT = 75.0
@@ -27,7 +29,6 @@ PIZERO_TEMP_LIMIT = 75.0
 # Timer Settings
 LOOP_TIMER = 30 # Check states every 10 seconds.
 last_changed_time = 0 # Last changed.
-
 
 
 def get_temperature():
@@ -62,7 +63,7 @@ def dvbsdr_start():
         _result = subprocess.check_output("sudo systemctl start dvbsdr", shell=True)
     except Exception as e:
         logging.error("Error starting dvbsdr - %s" % str(e))
-    
+
     logging.info("DVBSDR Started.")
 
 
@@ -101,9 +102,15 @@ def loop():
     if (_switch_state is True) and (_temp < PIZERO_TEMP_LIMIT) and (not _landing):
         # We should be OK to transmit.
         if not _dvbsdr_running:
+            # Ensure the PA is off
+            GPIO.output(DVB_ENABLE_RELAY, False)
             # Start DVBSDR.
             dvbsdr_start()
-        
+            # We perform a cal every startup, to be sure we get full output power.
+            # As such, we should NOT turn on the PA until after the cal is done.
+            logging.info("Waiting 30 seconds before enabling PA.")
+            time.sleep(30)
+
         # Enable the PA output.
         GPIO.output(DVB_ENABLE_RELAY, True)
         logging.info("PA Switched to ON.")

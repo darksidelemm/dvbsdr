@@ -30,7 +30,7 @@ FPGA_MODE=$WITH_FPGA
 UPSAMPLE=2
 
 #CALIBRATION PROCESS : 0 Normal Tx, 1 perform a calibration and save the result (should be done only once) : Carefull, big spike when calibration, do not plug a PA.
-CALIBRATE_BEFORE_TX=0
+CALIBRATE_BEFORE_TX=1
 
 # ------- ENCODER PARAMETERS --------
 
