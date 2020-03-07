@@ -25,13 +25,18 @@ DVB_ENABLE_RELAY = 13   # Relay wired between 12V rail and PA power input.
 
 # Limits
 PIZERO_TEMP_LIMIT = 75.0
+HEATSINK_TEMP_LIMIT = 75.0
 
 # Timer Settings
 LOOP_TIMER = 30 # Check states every 10 seconds.
 last_changed_time = 0 # Last changed.
 
+# DS18B20 Heatsink
+# Replace this with the path to your specific DS18B20 device.
+DS18B20 = "/sys/bus/w1/devices/28-00000259dcab/w1_slave"
 
-def get_temperature():
+
+def get_cpu_temperature():
     """ Grab the temperature of the RPi CPU """
     try:
         data = subprocess.check_output("/opt/vc/bin/vcgencmd measure_temp", shell=True)
@@ -40,6 +45,30 @@ def get_temperature():
     except Exception as e:
         logging.error("Error reading temperature - %s" % str(e))
         return -1
+
+
+def get_heatsink_temperature():
+    """ Grab the temperature of a connected DS18B20, nominally attached to the payload heatsink """
+    if DS18B20 is None:
+        return -273.0
+    
+    try:
+        _f = open(DS18B20, 'r')
+        _lines = _f.read()
+        _f.close()
+
+        if 'YES' in _lines:
+            # Valid CRC.
+            _temp = _lines.split('t=')[1].strip()
+            # Handle the DS18B20's first output, which always seems to be 85 degrees.
+            if _temp == "85000":
+                return -273.0
+            else:
+                _temp = int(_temp)/1000.0
+                return _temp
+    except Exception as e:
+        logging.error("Error reading temperature - %s" % str(e))
+        return -273.0
 
 
 def check_dvbsdr_status():
@@ -87,19 +116,20 @@ def dvbsdr_stop():
 def loop():
 
     # Get inputs
-    _temp = get_temperature()
+    _cpu_temp = get_cpu_temperature()
+    _heatsink_temp = get_heatsink_temperature()
     _switch_state = not GPIO.input(DVB_ENABLE_SWITCH)
 
     # TODO - GPS altitude/descent-rate based check.
     _landing = False
 
-    logging.info("TEMP: %.1f \tEnable Switch: %s \tLanding Mode: %s" % (_temp, str(_switch_state), str(_landing)))
+    logging.info("CPU Temp: %.1f \tHeatsink Temp: %.1f \tEnable Switch: %s \tLanding Mode: %s" % (_temp, str(_switch_state), str(_landing)))
 
     # Check if DVBSDR is running already.
     _dvbsdr_running = check_dvbsdr_status()
     logging.info("DVBSDR Running: %s" % str(_dvbsdr_running))
 
-    if (_switch_state is True) and (_temp < PIZERO_TEMP_LIMIT) and (not _landing):
+    if (_switch_state is True) and (_cpu_temp < PIZERO_TEMP_LIMIT) and (_heatsink_temp < HEATSINK_TEMP_LIMIT) and (not _landing):
         # We should be OK to transmit.
         if not _dvbsdr_running:
             # Ensure the PA is off
