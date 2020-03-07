@@ -123,7 +123,7 @@ def loop():
     # TODO - GPS altitude/descent-rate based check.
     _landing = False
 
-    logging.info("CPU Temp: %.1f \tHeatsink Temp: %.1f \tEnable Switch: %s \tLanding Mode: %s" % (_temp, str(_switch_state), str(_landing)))
+    logging.info("CPU Temp: %.1f \tHeatsink Temp: %.1f \tEnable Switch: %s \tLanding Mode: %s" % (_cpu_temp, _heatsink_temp, str(_switch_state), str(_landing)))
 
     # Check if DVBSDR is running already.
     _dvbsdr_running = check_dvbsdr_status()
