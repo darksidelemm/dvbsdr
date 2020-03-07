@@ -24,8 +24,8 @@ DVB_ENABLE_RELAY = 13   # Relay wired between 12V rail and PA power input.
                         # and 10k pulldown.
 
 # Limits
-PIZERO_TEMP_LIMIT = 75.0
-HEATSINK_TEMP_LIMIT = 75.0
+PIZERO_TEMP_LIMIT = 80.0 # Official threshold is 85 degrees, with CPU throttling occuring at 82 degrees.
+HEATSINK_TEMP_LIMIT = 75.0 # Final threshold TBD.
 
 # Timer Settings
 LOOP_TIMER = 30 # Check states every 10 seconds.
