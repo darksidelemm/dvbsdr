@@ -9,6 +9,7 @@ Additions by VK5QI:
 * `dvb_watchdog.py`, intended to be run on startup from `/etc/rc.local`. This script monitors a few temperature sensors, some IO pins, and (eventually) GPS descent/altitude data to determine when the DVB-S modulator and Power Amplifier should be enabled. Currently the following IO Connections are used:
   * GPIO 21 - DVB-S Enable. Short pin to ground to enable DVB-S transmissions. Disconnect to stop transmissions.
   * GPIO 13 - PA Enable. This used to drive the gate of a 2N7000 (via 100R, with a 10K pull-down at the gate), which drives a relay coil. This lets me completely cut power to the PA, cutting power dissipation within the payload by ~3-4W.
+  * GPIO 4 - 1Wire Interface, to a DS18B20.
 
 As I have had issues reliably getting full power out of the LimeSDR Mini when using a stored limemini.cal file, I've taken the approach of calibrating at each startup. As I have control over the PA, I disable power to the PA prior to starting DVB-S modulation, then enable the PA 30 seconds later.
 
@@ -17,6 +18,14 @@ TODO:
 * Add GPS input, with descent rate detection. Aim here is to cut power to the PA when the payload is in descent, and is about to land. Will need to use some non-volatile storage (save a file?) to ensure this persists across reboots.
   * Maybe use another GPIO line to override these checks, for testing on ground?
 * Add additional temp sensors (DS18B20), bonded to the payload's heat spreader. Decided on an appropriate high temperature cutoff, and hysteresis values.
+
+### Video Flipping
+avc2ts doesn't have a command-line option to flip the video, which might be required if the camera is mounted upside-down (as it is in my case). To get around this, [this line](https://github.com/F5OEO/avc2ts/blob/master/avc2ts.cpp#L1261) needs to be uncommented in avc2ts.cpp (which will be located in ~/dvbsdr/build/avc2ts/ after running the install script), and changed to read
+```
+setMirror(OPORT_VIDEO,OMX_MirrorBoth);
+```
+
+Then, re-compile (run `make` in the avc2ts directory) and copy the avc2ts binary into `~/dvbsdr/bin/`.
 
 # About dvbsdr
 
