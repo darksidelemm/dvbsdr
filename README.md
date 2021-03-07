@@ -1,6 +1,6 @@
-## VK5QI fork
+# DVBSDR VK5QI Fork
 
-This fork of dvbsdr exists so I can configuration-manage the changes I have made to dvbsdr for an upcoming Project Horus payload.
+This fork of dvbsdr exists so I can configuration-manage the changes I have made to dvbsdr for Project Horus flights.
 
 Additions by VK5QI:
 * `scripts/rpi_tx.sh` - Essentially the same as the encode_modulate.sh script mentioned below, with customizations for our flight.
@@ -8,8 +8,8 @@ Additions by VK5QI:
   * Note: not everything stops cleanly using sytemctl stop. Suggest using systemctl kill, followed by a systemctl stop to properly kill the software.
 * `dvb_watchdog.py`, intended to be run on startup from `/etc/rc.local`. This script monitors a few temperature sensors, some IO pins, and (eventually) GPS descent/altitude data to determine when the DVB-S modulator and Power Amplifier should be enabled. Currently the following IO Connections are used:
   * GPIO 21 - DVB-S Enable. Short pin to ground to enable DVB-S transmissions. Disconnect to stop transmissions.
-  * GPIO 13 - PA Enable. This used to drive the gate of a 2N7000 (via 100R, with a 10K pull-down at the gate), which drives a relay coil. This lets me completely cut power to the PA, cutting power dissipation within the payload by ~3-4W.
-  * GPIO 4 - 1Wire Interface, to a DS18B20.
+  * GPIO 13 - PA Enable. This used to drive a Panasonic AQZ102 Solid State Relay, with the relay's LED driven via a 180-oh resistor.
+  * GPIO 4 - 1Wire Interface, to a DS18B20, glued to the heat spreader plate.
 
 As I have had issues reliably getting full power out of the LimeSDR Mini when using a stored limemini.cal file, I've taken the approach of calibrating at each startup. As I have control over the PA, I disable power to the PA prior to starting DVB-S modulation, then enable the PA 30 seconds later.
 
@@ -17,7 +17,17 @@ TODO:
 * Monitor modulator output, and try and detect there are issues with the PiCam. (Maybe monitor running processes?)
 * Add GPS input, with descent rate detection. Aim here is to cut power to the PA when the payload is in descent, and is about to land. Will need to use some non-volatile storage (save a file?) to ensure this persists across reboots.
   * Maybe use another GPIO line to override these checks, for testing on ground?
-* Add additional temp sensors (DS18B20), bonded to the payload's heat spreader. Decided on an appropriate high temperature cutoff, and hysteresis values.
+
+## Flight History
+* Horus 55 - 2021-03-07
+  * Frequency: 445 MHz
+  * TX Power: 800mW
+  * Modulation: 1Msps QPSK, DVB-S with r=1/2 FEC.
+  * Video Resolution: 704x400 (SD, ~600kbit/s)
+  * Temperature cutout used: 63˚C (never reached this)
+  * Longest range received: 200km (Eudunda, SA, to Whyalla, SA)
+  * Video Link: https://www.youtube.com/watch?v=5vYcVRWrdhs
+  * Writeup: TBD
 
 ### Video Flipping
 avc2ts doesn't have a command-line option to flip the video, which might be required if the camera is mounted upside-down (as it is in my case). To get around this, [this line](https://github.com/F5OEO/avc2ts/blob/master/avc2ts.cpp#L1261) needs to be uncommented in avc2ts.cpp (which will be located in ~/dvbsdr/build/avc2ts/ after running the install script), and changed to read

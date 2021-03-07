@@ -4,7 +4,7 @@
 #
 #   Performs checks every X seconds to see if it is safe to enable the DVB-S transmitter.
 #
-#   This assumes the 
+#   Refer the main repo readme for what is wired to what GPIO
 #
 import argparse
 import logging
@@ -24,8 +24,21 @@ DVB_ENABLE_RELAY = 13   # Relay wired between 12V rail and PA power input.
                         # and 10k pulldown.
 
 # Limits
-PIZERO_TEMP_LIMIT = 80.0 # Official threshold is 85 degrees, with CPU throttling occuring at 82 degrees.
-HEATSINK_TEMP_LIMIT = 75.0 # Final threshold TBD.
+
+# Pi-Zero CPU Temperature Limit
+# Official threshold is 85 degrees, with CPU throttling occuring at 82 degrees.
+# I've locked this up at 90 degrees, so the Pi Zero is never the limiting factor.
+PIZERO_TEMP_LIMIT = 90.0 
+
+# Heatsink Temperature Limit
+# Testing of the payload in direct sunlight (prior to Horus 55) on a 30 degree day resulted
+# in a heatsink temperature of about 53 degrees (PA case temp of 75 degrees).
+# Measurements during flight never showed the heatsink temp rising above 40 degrees C.
+HEATSINK_TEMP_LIMIT = 60.0
+
+# Temperature Hysteresis setting (degrees).
+# Only re-enable the PA when the temperature drops this far below the above limits.
+HYSTERESIS = 4.0
 
 # Timer Settings
 LOOP_TIMER = 30 # Check states every 10 seconds.
@@ -35,6 +48,9 @@ last_changed_time = 0 # Last changed.
 # Replace this with the path to your specific DS18B20 device.
 DS18B20 = "/sys/bus/w1/devices/28-00000259dcab/w1_slave"
 
+
+# Global PA state value.
+_pa_state = False
 
 def get_cpu_temperature():
     """ Grab the temperature of the RPi CPU """
@@ -98,6 +114,10 @@ def dvbsdr_start():
 
 def dvbsdr_stop():
     """ Call systemctl to stop dvbsdr """
+    # WARNING WARNING
+    # For some reason this completely locks up the RPi Zero W
+    # so is not used at the moment.
+
     logging.info("Attempting to stop DVBSDR.")
     try:
         _result = subprocess.check_output("sudo systemctl kill dvbsdr", shell=True)
@@ -114,7 +134,7 @@ def dvbsdr_stop():
 
 
 def loop():
-
+    global _pa_state
     # Get inputs
     _cpu_temp = get_cpu_temperature()
     _heatsink_temp = get_heatsink_temperature()
@@ -123,17 +143,18 @@ def loop():
     # TODO - GPS altitude/descent-rate based check.
     _landing = False
 
-    logging.info("CPU Temp: %.1f \tHeatsink Temp: %.1f \tEnable Switch: %s \tLanding Mode: %s" % (_cpu_temp, _heatsink_temp, str(_switch_state), str(_landing)))
+    logging.info("CPU Temp: %.1f \tHeatsink Temp: %.1f \tEnable Switch: %s \tLanding Mode: %s \tPA: %s" % (_cpu_temp, _heatsink_temp, str(_switch_state), str(_landing), str(_pa_state)))
 
     # Check if DVBSDR is running already.
     _dvbsdr_running = check_dvbsdr_status()
     logging.info("DVBSDR Running: %s" % str(_dvbsdr_running))
 
-    if (_switch_state is True) and (_cpu_temp < PIZERO_TEMP_LIMIT) and (_heatsink_temp < HEATSINK_TEMP_LIMIT) and (not _landing):
+    if (_switch_state is True) and (_cpu_temp < (PIZERO_TEMP_LIMIT-HYSTERESIS)) and (_heatsink_temp < (HEATSINK_TEMP_LIMIT-HYSTERESIS)) and (not _landing):
         # We should be OK to transmit.
         if not _dvbsdr_running:
             # Ensure the PA is off
             GPIO.output(DVB_ENABLE_RELAY, False)
+            _pa_state = False
             # Start DVBSDR.
             dvbsdr_start()
             # We perform a cal every startup, to be sure we get full output power.
@@ -143,22 +164,25 @@ def loop():
 
         # Enable the PA output.
         GPIO.output(DVB_ENABLE_RELAY, True)
+        _pa_state = True
         logging.info("PA Switched to ON.")
-    else:
+
+    elif (_switch_state is False) or (_cpu_temp > PIZERO_TEMP_LIMIT) or (_heatsink_temp > HEATSINK_TEMP_LIMIT):
         # We are not in a safe state to transmit. Shutdown.
 
-        # Disable PA.
+        # Disable PA. Cuts power dissipation by 2W.
         GPIO.output(DVB_ENABLE_RELAY, False)
+        _pa_state = False
         logging.info("PA Switched to OFF.")
 
         # Stop DVBSDR.
         # TODO: Decide if we really want to stop DVBSDR. It only saves ~1W of heat dissipation...
-        dvbsdr_stop()
-
+        # For Horus 55 DVBSDR was not stopped. 
+        #dvbsdr_stop()
+    else:
+        logging.info("Doing nothing. May be in a hysteresis zone.")
 
     time.sleep(LOOP_TIMER)
-
-
 
 
 def main():
