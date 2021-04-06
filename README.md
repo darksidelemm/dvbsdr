@@ -2,6 +2,8 @@
 
 This fork of dvbsdr exists so I can configuration-manage the changes I have made to dvbsdr for Project Horus flights.
 
+**To those arriving at this repository from various blog/news articles - please go check out the work by [F5OEO](https://github.com/F5OEO/dvbsdr) and [natsfr](https://github.com/natsfr/LimeSDR_DVBSGateware) - without them this project would not be possible. What I've done is add some control around the edges, and package it up in a form suitable for use on a high-altitude balloon.**
+
 Additions by VK5QI:
 * `scripts/rpi_tx.sh` - Essentially the same as the encode_modulate.sh script mentioned below, with customizations for our flight.
 * dvbsdr systemd service file (`dvbsdr.service`). Allows dvbsdr to be started and stopped using sytemd.
